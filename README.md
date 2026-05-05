@@ -102,6 +102,37 @@ Classical template-building pipelines resample every individual spectrum onto a 
 
 ---
 
+## Figures
+
+The figures below are generated directly from a NIRPS dataset using `generate_figures.py` and the `--quickdoc` pipeline flag.
+
+**Template spectrum — 1545–1545.1 nm (TOI-4552, NIRPS)**
+
+![Template spectrum](figures/fig_spectrum.png)
+
+Zoomed barycentric template in a 0.1 nm window. Individual stellar absorption features are resolved at the pixel level. The lower panel compares odd (blue) and even (green) diffraction orders. Generated from 40+ epochs spanning 2023–2025.
+
+**BERV super-sampling (Proxima Centauri, NIRPS, order 55)**
+
+![BERV super-sampling](figures/fig_berv_scatter.png)
+
+Each dot is one detector pixel from one epoch, coloured by BERV. The large seasonal BERV range shifts each pixel to a slightly different barycentric wavelength, super-sampling the line profile without any interpolation. The template (white line) is the Gaussian–SavGol regression through all epochs simultaneously. Lower panel: residuals (observed − template).
+
+To regenerate the figures:
+
+```bash
+# Fast: one representative order only
+python template_nointerp.py data/ output.csv --mask_o2 --quickdoc --fig_dir figures
+
+# Full run with figures
+python template_nointerp.py data/ output.csv --mask_o2 --docmode --fig_dir figures
+
+# From a completed template CSV
+python generate_figures.py TOI4552.csv --output_dir figures
+```
+
+---
+
 ## Installation
 
 ### Prerequisites
@@ -194,6 +225,9 @@ optional arguments:
                     Set to -1 (default) to disable sky masking.
   --mask_o2         Mask O₂ telluric bands using the bundled TAPAS model.
   --doplot          Show diagnostic plots for a representative order.
+  --quickdoc        Run one representative order, save diagnostic figures, and exit.
+  --docmode         Full run, saving diagnostic figures at each order.
+  --fig_dir DIR     Output directory for figures (default: figures/).
 ```
 
 ### Examples
