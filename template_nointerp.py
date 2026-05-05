@@ -167,7 +167,7 @@ def make_template(files, doplot=False, skymask=-1, mask_o2=True, docmode=False, 
         wave0 = 950  # Starting wavelength for NIRPS.
         wave1 = 2000  # Ending wavelength for NIRPS.
         fiber = 'A'  # Fiber type for NIRPS.
-        plot_order = 55 # Order to plot for NIRPS.
+        plot_order = 58 # Order to plot for NIRPS.
 
     elif inst == 'SPIRou':
         dv_grid = 1.0  # Velocity step in km/s for SPIRou.
@@ -366,7 +366,7 @@ def make_template(files, doplot=False, skymask=-1, mask_o2=True, docmode=False, 
         _do_order_plot = (doplot or docmode or quickdoc) and iord == plot_order
         if _do_order_plot:
             med_wave = np.nanmedian(waves)
-            xcut = (1545.0, 1545.1)
+            xcut = (1602.2, 1602.3)
 
             fig_scatter, ax_scatter = plt.subplots(nrows=2, ncols=1, figsize=(16, 8), sharex=True)
             fig_scatter.subplots_adjust(right=0.88)
@@ -476,7 +476,15 @@ def make_template(files, doplot=False, skymask=-1, mask_o2=True, docmode=False, 
             # ── scatter figure ──────────────────────────────────────────────
             valid_plot = np.isfinite(sp_magic)
             ax_scatter[0].plot(wave_magic[valid_plot], sp_magic[valid_plot],
-                               color='white', lw=1.2, label='Template', zorder=5)
+                               color='orange', lw=2.0, label='Template', zorder=5)
+            # Overplot native pixel centres from the first file as vertical dashed lines
+            _native_pix = waves[0][(waves[0] > xcut[0]) & (waves[0] < xcut[1])]
+            _first_pix = True
+            for _xpix in _native_pix:
+                ax_scatter[0].axvline(_xpix, color='gray', lw=0.8, ls='--', alpha=0.6, zorder=1,
+                                      label='Native pixels' if _first_pix else None)
+                ax_scatter[1].axvline(_xpix, color='gray', lw=0.8, ls='--', alpha=0.6, zorder=1)
+                _first_pix = False
             ax_scatter[0].set_xlim(xcut)
             # auto y-limits from data in zoom window
             _g0 = valid_plot & (wave_magic > xcut[0]) & (wave_magic < xcut[1])
@@ -497,7 +505,7 @@ def make_template(files, doplot=False, skymask=-1, mask_o2=True, docmode=False, 
                 res = fluxes[isp] - sp_recon_plot
                 g = np.isfinite(res) & (waves[isp] > xcut[0]) & (waves[isp] < xcut[1])
                 color = cmap(norm_berv(ABS_VELO[isp]))
-                ax_scatter[1].plot(waves[isp][g], res[g], '.', color=color, alpha=0.25, ms=2)
+                ax_scatter[1].plot(waves[isp][g], res[g], '.', color=color, alpha=0.25, ms=4)
                 _all_res.append(res[g])
             ax_scatter[1].axhline(0, color='white', lw=0.8)
             ax_scatter[1].set_xlim(xcut)
