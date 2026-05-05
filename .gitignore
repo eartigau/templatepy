@@ -1,0 +1,4 @@
+*.fits
+*.csv
+*.pkl
+*_temp/

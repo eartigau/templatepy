@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>templatepy — Interpolation-free stellar spectral templates</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- Highlight.js for code -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"></script>
+
+  <!-- KaTeX for math -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+          onload="renderMathInElement(document.body, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #21262d;
+      --border:    #30363d;
+      --accent:    #58a6ff;
+      --accent2:   #3fb950;
+      --accent3:   #d29922;
+      --text:      #e6edf3;
+      --text-muted:#8b949e;
+      --radius:    8px;
+      --code-bg:   #0d1117;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 16px;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(13,17,23,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex; align-items: center; gap: 2rem; height: 56px;
+    }
+    nav .brand {
+      font-weight: 700; font-size: 1.1rem;
+      color: var(--accent);
+      text-decoration: none; white-space: nowrap;
+    }
+    nav a {
+      color: var(--text-muted); text-decoration: none; font-size: 0.9rem;
+      transition: color .15s;
+    }
+    nav a:hover { color: var(--text); }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, #0d1117 0%, #0f1c2e 50%, #0d1f0f 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 5rem 2rem 4rem;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, #58a6ff, #3fb950);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
+    }
+    .hero p {
+      font-size: 1.15rem; color: var(--text-muted);
+      max-width: 680px; margin: 0 auto 2rem;
+    }
+    .badge-row { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2rem; }
+    .badge {
+      display: inline-flex; align-items: center; gap: .4rem;
+      padding: .3rem .9rem; border-radius: 20px; font-size: .8rem; font-weight: 500;
+    }
+    .badge-blue   { background: rgba(88,166,255,.15); border: 1px solid rgba(88,166,255,.3); color: #58a6ff; }
+    .badge-green  { background: rgba(63,185,80,.15);  border: 1px solid rgba(63,185,80,.3);  color: #3fb950; }
+    .badge-yellow { background: rgba(210,153,34,.15); border: 1px solid rgba(210,153,34,.3); color: #d29922; }
+    .btn-primary {
+      display: inline-block;
+      background: linear-gradient(135deg, #1f6feb, #238636);
+      color: #fff; text-decoration: none; padding: .75rem 2rem;
+      border-radius: var(--radius); font-weight: 600; font-size: .95rem;
+      transition: opacity .15s;
+    }
+    .btn-primary:hover { opacity: .85; }
+
+    /* ── LAYOUT ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+
+    section { padding: 4rem 0; border-bottom: 1px solid var(--border); }
+    section:last-child { border-bottom: none; }
+
+    h2 {
+      font-size: 1.9rem; font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: var(--text);
+    }
+    h2 .anchor { color: var(--accent); margin-right: .5rem; font-size: 1.1rem; }
+    h3 { font-size: 1.2rem; font-weight: 600; margin: 1.75rem 0 .75rem; color: var(--text); }
+
+    p { margin-bottom: 1rem; color: var(--text-muted); }
+    p strong { color: var(--text); }
+    ul, ol { margin: .5rem 0 1rem 1.5rem; color: var(--text-muted); }
+    li { margin-bottom: .35rem; }
+
+    /* ── CODE ── */
+    pre {
+      border-radius: var(--radius); overflow-x: auto;
+      font-size: .88rem; border: 1px solid var(--border);
+      margin: 1.25rem 0;
+    }
+    code.inline {
+      background: var(--surface2); padding: .1em .4em;
+      border-radius: 4px; font-family: 'JetBrains Mono', monospace;
+      font-size: .88em; color: #e6edf3;
+    }
+
+    /* ── CARDS ── */
+    .card-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.25rem; margin-top: 1.5rem;
+    }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem;
+      transition: border-color .15s, transform .15s;
+    }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .card-icon { font-size: 1.75rem; margin-bottom: .75rem; }
+    .card h3 { margin: 0 0 .5rem; font-size: 1rem; }
+    .card p  { margin: 0; font-size: .9rem; }
+
+    /* ── TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.25rem 0; }
+    table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    th {
+      background: var(--surface2); color: var(--text);
+      padding: .65rem 1rem; text-align: left;
+      border-bottom: 2px solid var(--border);
+    }
+    td {
+      padding: .6rem 1rem; border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    tr:hover td { background: rgba(88,166,255,.04); }
+    td code { font-family: 'JetBrains Mono', monospace; font-size: .85em; color: var(--accent); }
+
+    /* ── ALGORITHM PIPELINE ── */
+    .pipeline {
+      display: flex; flex-direction: column; gap: 0; margin: 2rem 0;
+      max-width: 640px;
+    }
+    .pipe-step {
+      display: flex; align-items: flex-start; gap: 1rem;
+      padding: 1rem 1.25rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius);
+      position: relative; margin-bottom: 0;
+    }
+    .pipe-step + .pipe-step { border-top: none; border-radius: 0; }
+    .pipe-step:first-child { border-radius: var(--radius) var(--radius) 0 0; }
+    .pipe-step:last-child  { border-radius: 0 0 var(--radius) var(--radius); }
+    .pipe-num {
+      min-width: 28px; height: 28px;
+      background: var(--accent); color: #fff;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: .8rem; font-weight: 700; flex-shrink: 0; margin-top: .1rem;
+    }
+    .pipe-body h4 { font-size: .95rem; margin-bottom: .25rem; color: var(--text); }
+    .pipe-body p  { font-size: .88rem; margin: 0; }
+
+    /* ── FIGURE PANELS ── */
+    .fig-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem; margin-top: 1.5rem;
+    }
+    .fig-panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }
+    .fig-panel svg { display: block; width: 100%; height: auto; }
+    .fig-caption {
+      padding: .75rem 1rem; font-size: .83rem; color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── TABS ── */
+    .tab-bar {
+      display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 0;
+    }
+    .tab-btn {
+      background: none; border: none; cursor: pointer;
+      padding: .7rem 1.4rem; font-size: .9rem; font-weight: 500;
+      color: var(--text-muted); border-bottom: 2px solid transparent;
+      margin-bottom: -2px; transition: color .15s, border-color .15s;
+    }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: rgba(88,166,255,.07);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 1rem 1.25rem; margin: 1.25rem 0;
+    }
+    .callout.warning { border-color: var(--accent3); background: rgba(210,153,34,.07); }
+    .callout.success { border-color: var(--accent2); background: rgba(63,185,80,.07); }
+    .callout p { margin: 0; font-size: .92rem; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem; text-align: center;
+      color: var(--text-muted); font-size: .85rem;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+
+    @media (max-width: 640px) {
+      nav a:not(.brand) { display: none; }
+      .hero { padding: 3rem 1rem 2.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════ NAV ════════════════ -->
+<nav>
+  <a class="brand" href="#">templatepy</a>
+  <a href="#why">Motivation</a>
+  <a href="#algorithm">Algorithm</a>
+  <a href="#install">Installation</a>
+  <a href="#usage">Usage</a>
+  <a href="#output">Output</a>
+  <a href="#figures">Figures</a>
+  <a href="https://github.com/eartigau/templatepy" target="_blank">GitHub</a>
+</nav>
+
+<!-- ════════════════ HERO ════════════════ -->
+<header class="hero">
+  <h1>templatepy</h1>
+  <p>Interpolation-free stellar spectral template construction from multi-epoch échelle spectra — for NIRPS and SPIRou.</p>
+  <div class="badge-row">
+    <span class="badge badge-blue">🔭 NIRPS · SPIRou</span>
+    <span class="badge badge-green">🐍 Python ≥ 3.10</span>
+    <span class="badge badge-yellow">⚡ Numba JIT</span>
+    <span class="badge badge-blue">📐 No interpolation</span>
+  </div>
+  <a href="#install" class="btn-primary">Get started →</a>
+</header>
+
+<!-- ════════════════ WHY ════════════════ -->
+<section id="why">
+  <div class="container">
+    <h2><span class="anchor">#</span>Why no interpolation?</h2>
+    <p>Classical template pipelines resample every spectrum onto a common wavelength grid <em>before</em> co-adding. This introduces three well-known problems:</p>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">〰️</div>
+        <h3>Correlated noise</h3>
+        <p>Each spline resampling mixes adjacent pixels, creating wavelength-correlated noise that inflates apparent spectral features and biases line shape measurements.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🫧</div>
+        <h3>Line smearing</h3>
+        <p>A non-integer pixel shift smears sharp absorption lines over multiple output pixels, degrading the effective spectral resolution of the co-added template.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔀</div>
+        <h3>Order-edge mixing</h3>
+        <p>Near échelle order boundaries, flux from overlapping orders contaminates the resampled spectrum when a single common grid spans multiple physical orders.</p>
+      </div>
+    </div>
+
+    <p style="margin-top:1.5rem;"><strong>templatepy</strong> eliminates all three issues. Pixels are never resampled individually. Instead, the BERV-corrected (\(\lambda_\text{bary}\), flux) pairs from <em>every epoch</em> are fed directly into a Gaussian-weighted Savitzky–Golay regression that maps the irregular cloud onto the output grid in one step.</p>
+
+    <div class="callout">
+      <p><strong>Key insight:</strong> the large range of Barycentric Earth Radial Velocities (BERV) across a typical observing season — up to ±30 km s⁻¹ — means that a stellar absorption line visits many different detector pixel positions across epochs. Combining all epochs without resampling effectively super-samples the spectrum, recovering sub-pixel spectral information.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ ALGORITHM ════════════════ -->
+<section id="algorithm">
+  <div class="container">
+    <h2><span class="anchor">#</span>Algorithm</h2>
+
+    <h3>The "magic grid"</h3>
+    <p>The output wavelength axis is a logarithmic grid equally spaced in velocity:</p>
+
+    $$\lambda_k = \lambda_0 \exp\!\left(\frac{k}{N}\,\ln\frac{\lambda_1}{\lambda_0}\right), \quad k = 0,\dots,N-1$$
+
+    <p>with $\Delta v = c\,(\lambda_{k+1}/\lambda_k - 1)$ = 0.5 km s⁻¹ for NIRPS and 1.0 km s⁻¹ for SPIRou. Every pixel covers the same fractional bandwidth, so the pixel response function is shift-invariant.</p>
+
+    <h3>BERV correction</h3>
+    <p>Each observation's wavelength array is shifted to the Solar System barycentre using the full relativistic formula:</p>
+
+    $$\lambda_\text{bary} = \lambda_\text{obs} \sqrt{\frac{1 + v_\text{BERV}/c}{1 - v_\text{BERV}/c}}$$
+
+    <p>This aligns all spectra in a common rest frame before they are co-added.</p>
+
+    <h3>Gaussian–Savitzky–Golay reconstruction</h3>
+    <p>For each output pixel $\lambda_k$ the filter fits a polynomial of degree $p = 3$ to the surrounding scattered data points, weighted by a Gaussian in log-wavelength:</p>
+
+    $$w_i = \exp\!\left(-\frac{(\ln\lambda_i - \ln\lambda_k)^2}{2\sigma^2}\right)$$
+
+    <p>where $\sigma = \text{FWHM}/(2\sqrt{2\ln 2})$ with FWHM = $3\,\Delta v\,/\,c$. The polynomial coefficients give the template value <em>and</em> its derivatives $\partial f/\partial\ln\lambda$ up to third order at no extra cost.</p>
+
+    <h3>Pipeline steps</h3>
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="pipe-num">1</div>
+        <div class="pipe-body">
+          <h4>Read &amp; cache</h4>
+          <p>FITS files are read once; per-order (wave, flux, blaze, BERV) dicts are pickled to <code class="inline">&lt;input&gt;_temp/</code> for fast re-runs.</p>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-num">2</div>
+        <div class="pipe-body">
+          <h4>Telluric masking</h4>
+          <p>Pixels where O₂ transmittance &lt; 90 % (TAPAS model, La Silla) are flagged NaN. Optional sky emission masking controlled by <code class="inline">--skymask</code>.</p>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-num">3</div>
+        <div class="pipe-body">
+          <h4>BERV shift → barycentric frame</h4>
+          <p>Each pixel moves to its barycentric wavelength. No interpolation.</p>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-num">4</div>
+        <div class="pipe-body">
+          <h4>Gaussian–SavGol regression (×4 iterations)</h4>
+          <p>All scattered (log λ, f) pairs fed to the filter. Template and derivatives d0…d3 produced in the final iteration.</p>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-num">5</div>
+        <div class="pipe-body">
+          <h4>Sigma-clipping (2σ)</h4>
+          <p>Residuals between each observation and current template are computed. Pixels &gt; 2σ are rejected; template is refit.</p>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-num">6</div>
+        <div class="pipe-body">
+          <h4>Continuum correction</h4>
+          <p>A low-pass-filtered ratio removes slow continuum mismatches from imperfect blaze division.</p>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-num">7</div>
+        <div class="pipe-body">
+          <h4>Odd + even order combination</h4>
+          <p>Odd and even diffraction orders are built separately and merged with blaze-function weights. Order-edge fall-off handled by Gaussian-eroded weight profiles.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ FIGURES ════════════════ -->
+<section id="figures">
+  <div class="container">
+      <h2><span class="anchor">#</span>Illustrated figures</h2>
+    <p>The figures below are generated directly from a NIRPS dataset (TOI-4552 / Proxima Centauri) using the bundled <code class="inline">generate_figures.py</code> script and the <code class="inline">--quickdoc</code> / <code class="inline">--docmode</code> pipeline flags. Re-generate them at any time with:</p>
+    <pre><code class="language-bash">python generate_figures.py TOI4552.csv --output_dir figures</code></pre>
+
+    <!-- ── Full-width figures (figs 0–3) ── -->
+    <div style="display:flex;flex-direction:column;gap:1.5rem;margin-top:1.5rem;">
+
+      <!-- Figure 0: full spectrum -->
+      <div class="fig-panel">
+        <img src="figures/fig_spectrum.png" style="width:100%;display:block;" alt="Full NIRPS template spectrum of TOI-4552" />
+        <div class="fig-caption"><strong>Template overview — 1545–1545.1 nm (TOI-4552, NIRPS).</strong> Zoomed view of the barycentric template in a 0.1 nm window, y-axis clipped to the exact flux range. Individual stellar absorption features are resolved at the pixel level. The lower panel compares odd (blue) and even (green) diffraction orders independently. Generated from 40+ epochs spanning 2023–2025.</div>
+      </div>
+
+      <!-- Figure 1: BERV shifting -->
+      <div class="fig-panel">
+        <img src="figures/fig_berv_scatter.png" style="width:100%;display:block;" alt="BERV super-sampling scatter plot" />
+        <div class="fig-caption"><strong>Fig. 1 — BERV super-sampling (Proxima Centauri, NIRPS order 55, 1545–1545.1 nm).</strong> Each dot is one detector pixel from one epoch, coloured by BERV. The large seasonal BERV range shifts each pixel to a slightly different barycentric wavelength, super-sampling the line profile without any interpolation. The template (white line) is the Gaussian–SavGol regression through all epochs simultaneously. Lower panel: residuals (observed − template).</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ INSTALL ════════════════ -->
+<section id="install">
+  <div class="container">
+    <h2><span class="anchor">#</span>Installation</h2>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="showTab('tab-conda', this)">conda (recommended)</button>
+      <button class="tab-btn" onclick="showTab('tab-pip', this)">pip only</button>
+      <button class="tab-btn" onclick="showTab('tab-dev', this)">Development</button>
+    </div>
+
+    <div id="tab-conda" class="tab-panel active">
+      <pre><code class="language-bash"># 1. Clone the repository
+git clone https://github.com/eartigau/templatepy.git
+cd templatepy
+
+# 2. Create a dedicated conda environment
+conda create -n templatepy python=3.12
+conda activate templatepy
+
+# 3. Install all dependencies
+pip install -r requirements.txt
+
+# 4. Install etienne_tools (required dependency)
+pip install git+https://github.com/eartigau/etienne_tools.git
+
+# 5. Verify
+python -c "from template_nointerp import make_template; print('OK')"</code></pre>
+    </div>
+
+    <div id="tab-pip" class="tab-panel">
+      <pre><code class="language-bash">git clone https://github.com/eartigau/templatepy.git
+cd templatepy
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+pip install git+https://github.com/eartigau/etienne_tools.git</code></pre>
+    </div>
+
+    <div id="tab-dev" class="tab-panel">
+      <pre><code class="language-bash">git clone https://github.com/eartigau/templatepy.git
+cd templatepy
+conda create -n templatepy-dev python=3.12
+conda activate templatepy-dev
+pip install -e ".[dev]"
+pip install git+https://github.com/eartigau/etienne_tools.git</code></pre>
+    </div>
+
+    <div class="callout warning" style="margin-top:1.5rem;">
+      <p><strong>Numba first-run compilation:</strong> On the very first run, Numba will JIT-compile the inner loops. This adds ~30–60 s of one-time overhead. Subsequent runs use the cached bytecode and start immediately.</p>
+    </div>
+
+    <h3>Dependencies at a glance</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Package</th><th>Min. version</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>numpy</code></td><td>1.24</td><td>Array operations throughout</td></tr>
+          <tr><td><code>scipy</code></td><td>1.10</td><td>Splines, constants, signal processing</td></tr>
+          <tr><td><code>astropy</code></td><td>5.3</td><td>FITS I/O, Table</td></tr>
+          <tr><td><code>matplotlib</code></td><td>3.7</td><td>Diagnostic plots</td></tr>
+          <tr><td><code>tqdm</code></td><td>4.65</td><td>Progress bars</td></tr>
+          <tr><td><code>numba</code></td><td>0.57</td><td>JIT-compiled inner loops</td></tr>
+          <tr><td><code>etienne_tools</code></td><td>latest</td><td><code>lowpassfilter</code> utility</td></tr>
+          <tr><td><code>gaussian_savgol</code></td><td>bundled</td><td>Gaussian-weighted SavGol on irregular grid</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ USAGE ════════════════ -->
+<section id="usage">
+  <div class="container">
+    <h2><span class="anchor">#</span>Usage</h2>
+
+    <h3>Python API</h3>
+    <pre><code class="language-python">import glob
+from template_nointerp import make_template
+from astropy.table import Table
+
+# Collect all telluric-corrected FITS files
+files = sorted(glob.glob("data/*t.fits"))
+
+# Build the template  (instrument auto-detected from FITS header)
+tbl = make_template(
+    files,
+    doplot   = True,    # show diagnostic plot for a representative order
+    skymask  = 0.3,     # mask pixels where sky/flux > 0.3  (-1 = off)
+    mask_o2  = True,    # mask O2 bands using bundled TAPAS model
+)
+
+# Save as CSV and FITS
+tbl.write("my_template.csv",  overwrite=True)
+tbl.write("my_template.fits", overwrite=True)</code></pre>
+
+    <h3>Command-line interface</h3>
+    <pre><code class="language-bash">python template_nointerp.py &lt;input_folder&gt; &lt;output_file&gt; [options]
+
+# Examples:
+# Minimal run (NIRPS, no masking)
+python template_nointerp.py data/ TOI4552.csv
+
+# With O2 masking (recommended for NIR)
+python template_nointerp.py data/ TOI4552.csv --mask_o2
+
+# Sky masking + O2 masking
+python template_nointerp.py data/ TOI4552.csv --mask_o2 --skymask 0.3
+
+# Show diagnostic plots (processes one representative order only)
+python template_nointerp.py data/ TOI4552.csv --mask_o2 --doplot</code></pre>
+
+    <h3>Options reference</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>input_folder</code></td><td>positional</td><td>—</td><td>Folder with <code>*t.fits</code> input files</td></tr>
+          <tr><td><code>output_file</code></td><td>positional</td><td>—</td><td>Output path (.csv or .fits)</td></tr>
+          <tr><td><code>--skymask</code></td><td>float</td><td>−1</td><td>sky/continuum ratio threshold; −1 disables</td></tr>
+          <tr><td><code>--mask_o2</code></td><td>flag</td><td>off</td><td>Mask O₂ telluric bands with TAPAS model</td></tr>
+          <tr><td><code>--doplot</code></td><td>flag</td><td>off</td><td>Show intermediate diagnostic plots</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Re-using cached data</h3>
+    <p>On the first run, per-order data for each FITS file is pickled into <code class="inline">&lt;input_folder&gt;_temp/</code>. Subsequent runs with the same input folder skip re-reading the FITS files entirely, reducing run time by 3–5×. Delete the <code class="inline">_temp/</code> folder to force a fresh read.</p>
+  </div>
+</section>
+
+<!-- ════════════════ OUTPUT ════════════════ -->
+<section id="output">
+  <div class="container">
+    <h2><span class="anchor">#</span>Output format</h2>
+    <p>The output table (CSV or FITS) has one row per wavelength pixel on the barycentric magic grid.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Column</th><th>Units</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>wavelength</code></td><td>nm</td><td>Barycentric log-spaced wavelength grid</td></tr>
+          <tr><td><code>flux</code></td><td>ADU (norm.)</td><td>Blaze-weighted co-add of odd + even orders</td></tr>
+          <tr><td><code>eflux</code></td><td>ADU (norm.)</td><td>Propagated flux uncertainty</td></tr>
+          <tr><td><code>rms</code></td><td>ADU (norm.)</td><td>Per-pixel RMS across epochs</td></tr>
+          <tr><td><code>flux_odd</code></td><td>ADU (norm.)</td><td>Flux from odd diffraction orders only</td></tr>
+          <tr><td><code>flux_even</code></td><td>ADU (norm.)</td><td>Flux from even diffraction orders only</td></tr>
+          <tr><td><code>blaze_odd</code></td><td>—</td><td>Median blaze weight (odd orders)</td></tr>
+          <tr><td><code>blaze_even</code></td><td>—</td><td>Median blaze weight (even orders)</td></tr>
+          <tr><td><code>flux_savgol_d0</code></td><td>ADU (norm.)</td><td>Gaussian–SavGol template (= flux)</td></tr>
+          <tr><td><code>flux_savgol_d1</code></td><td>—</td><td>$\partial f / \partial \ln\lambda$</td></tr>
+          <tr><td><code>flux_savgol_d2</code></td><td>—</td><td>$\partial^2 f / \partial \ln^2\lambda$</td></tr>
+          <tr><td><code>flux_savgol_d3</code></td><td>—</td><td>$\partial^3 f / \partial \ln^3\lambda$</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>All <code class="inline">flux_savgol_d*</code> columns have <code class="inline">odd</code> and <code class="inline">even</code> variants (e.g., <code class="inline">flux_odd_savgol_d1</code>).</p>
+
+    <h3>Reading the output in Python</h3>
+    <pre><code class="language-python">from astropy.table import Table
+import matplotlib.pyplot as plt
+
+tbl = Table.read("my_template.csv")
+
+fig, axes = plt.subplots(3, 1, figsize=(14, 8), sharex=True)
+
+# Normalised template + uncertainty
+axes[0].fill_between(tbl["wavelength"],
+                     tbl["flux"] - tbl["eflux"],
+                     tbl["flux"] + tbl["eflux"],
+                     alpha=0.3, label="1-σ uncertainty")
+axes[0].plot(tbl["wavelength"], tbl["flux"], lw=0.8, label="Template")
+axes[0].set_ylabel("Flux (norm.)")
+
+# Odd vs even order comparison
+axes[1].plot(tbl["wavelength"], tbl["flux_odd"],  lw=0.7, label="Odd orders",  alpha=0.7)
+axes[1].plot(tbl["wavelength"], tbl["flux_even"], lw=0.7, label="Even orders", alpha=0.7)
+axes[1].set_ylabel("Flux (norm.)")
+
+# First derivative  (proxy for RV sensitivity)
+axes[2].plot(tbl["wavelength"], tbl["flux_savgol_d1"], lw=0.8, color="tab:orange")
+axes[2].set_ylabel("∂f/∂lnλ")
+axes[2].set_xlabel("Wavelength (nm)")
+
+for ax in axes:
+    ax.legend(fontsize=8)
+plt.tight_layout()
+plt.show()</code></pre>
+  </div>
+</section>
+
+<!-- ════════════════ INSTRUMENTS ════════════════ -->
+<section id="instruments">
+  <div class="container">
+    <h2><span class="anchor">#</span>Supported instruments</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Instrument</th><th>Observatory</th><th>Wavelength range</th><th>dv_grid</th><th>Fiber</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>NIRPS</strong></td>
+            <td>La Silla (ESO 3.6 m)</td>
+            <td>950 – 2000 nm</td>
+            <td>0.5 km s⁻¹</td>
+            <td>A</td>
+          </tr>
+          <tr>
+            <td><strong>SPIRou</strong></td>
+            <td>CFHT (Mauna Kea)</td>
+            <td>965 – 2500 nm</td>
+            <td>1.0 km s⁻¹</td>
+            <td>AB</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The instrument is detected automatically from the <code class="inline">INSTRUME</code> FITS header keyword. The TAPAS O₂ model bundled in <code class="inline">LaSilla_NIRPS_tapas.fits</code> is computed for the La Silla site; SPIRou users at Mauna Kea may wish to supply a site-appropriate model.</p>
+  </div>
+</section>
+
+<!-- ════════════════ FOOTER ════════════════ -->
+<footer>
+  <p>
+    <strong>templatepy</strong> — MIT License — © Étienne Artigau &nbsp;|&nbsp;
+    <a href="https://github.com/eartigau/templatepy" target="_blank">GitHub</a>
+  </p>
+  <p style="margin-top:.5rem; font-size:.8rem;">
+    Built for NIRPS and SPIRou spectroscopy. Pull requests welcome.
+  </p>
+</footer>
+
+<script>
+  // ── Syntax highlighting ──
+  document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());
+
+  // ── Tab switcher ──
+  function showTab(id, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    btn.classList.add('active');
+  }
+</script>
+</body>
+</html>

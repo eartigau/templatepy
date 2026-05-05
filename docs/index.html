@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>templatepy — Interpolation-free stellar spectral templates</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- Highlight.js for code -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"></script>
+
+  <!-- KaTeX for math -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+          onload="renderMathInElement(document.body, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #21262d;
+      --border:    #30363d;
+      --accent:    #58a6ff;
+      --accent2:   #3fb950;
+      --accent3:   #d29922;
+      --text:      #e6edf3;
+      --text-muted:#8b949e;
+      --radius:    8px;
+      --code-bg:   #0d1117;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 16px;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(13,17,23,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex; align-items: center; gap: 2rem; height: 56px;
+    }
+    nav .brand {
+      font-weight: 700; font-size: 1.1rem;
+      color: var(--accent);
+      text-decoration: none; white-space: nowrap;
+    }
+    nav a {
+      color: var(--text-muted); text-decoration: none; font-size: 0.9rem;
+      transition: color .15s;
+    }
+    nav a:hover { color: var(--text); }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, #0d1117 0%, #0f1c2e 50%, #0d1f0f 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 5rem 2rem 4rem;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, #58a6ff, #3fb950);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
+    }
+    .hero p {
+      font-size: 1.15rem; color: var(--text-muted);
+      max-width: 680px; margin: 0 auto 2rem;
+    }
+    .badge-row { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2rem; }
+    .badge {
+      display: inline-flex; align-items: center; gap: .4rem;
+      padding: .3rem .9rem; border-radius: 20px; font-size: .8rem; font-weight: 500;
+    }
+    .badge-blue   { background: rgba(88,166,255,.15); border: 1px solid rgba(88,166,255,.3); color: #58a6ff; }
+    .badge-green  { background: rgba(63,185,80,.15);  border: 1px solid rgba(63,185,80,.3);  color: #3fb950; }
+    .badge-yellow { background: rgba(210,153,34,.15); border: 1px solid rgba(210,153,34,.3); color: #d29922; }
+    .btn-primary {
+      display: inline-block;
+      background: linear-gradient(135deg, #1f6feb, #238636);
+      color: #fff; text-decoration: none; padding: .75rem 2rem;
+      border-radius: var(--radius); font-weight: 600; font-size: .95rem;
+      transition: opacity .15s;
+    }
+    .btn-primary:hover { opacity: .85; }
+
+    /* ── LAYOUT ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+
+    section { padding: 4rem 0; border-bottom: 1px solid var(--border); }
+    section:last-child { border-bottom: none; }
+
+    h2 {
+      font-size: 1.9rem; font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: var(--text);
+    }
+    h2 .anchor { color: var(--accent); margin-right: .5rem; font-size: 1.1rem; }
+    h3 { font-size: 1.2rem; font-weight: 600; margin: 1.75rem 0 .75rem; color: var(--text); }
+
+    p { margin-bottom: 1rem; color: var(--text-muted); }
+    p strong { color: var(--text); }
+    ul, ol { margin: .5rem 0 1rem 1.5rem; color: var(--text-muted); }
+    li { margin-bottom: .35rem; }
+
+    /* ── CODE ── */
+    pre {
+      border-radius: var(--radius); overflow-x: auto;
+      font-size: .88rem; border: 1px solid var(--border);
+      margin: 1.25rem 0;
+    }
+    code.inline {
+      background: var(--surface2); padding: .1em .4em;
+      border-radius: 4px; font-family: 'JetBrains Mono', monospace;
+      font-size: .88em; color: #e6edf3;
+    }
+
+    /* ── CARDS ── */
+    .card-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.25rem; margin-top: 1.5rem;
+    }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem;
+      transition: border-color .15s, transform .15s;
+    }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .card-icon { font-size: 1.75rem; margin-bottom: .75rem; }
+    .card h3 { margin: 0 0 .5rem; font-size: 1rem; }
+    .card p  { margin: 0; font-size: .9rem; }
+
+    /* ── TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.25rem 0; }
+    table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    th {
+      background: var(--surface2); color: var(--text);
+      padding: .65rem 1rem; text-align: left;
+      border-bottom: 2px solid var(--border);
+    }
+    td {
+      padding: .6rem 1rem; border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    tr:hover td { background: rgba(88,166,255,.04); }
+    td code { font-family: 'JetBrains Mono', monospace; font-size: .85em; color: var(--accent); }
+
+    /* ── ALGORITHM PIPELINE ── */
+    .pipeline {
+      display: flex; flex-direction: column; gap: 0; margin: 2rem 0;
+      max-width: 640px;
+    }
+    .pipe-step {
+      display: flex; align-items: flex-start; gap: 1rem;
+      padding: 1rem 1.25rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius);
+      position: relative; margin-bottom: 0;
+    }
+    .pipe-step + .pipe-step { border-top: none; border-radius: 0; }
+    .pipe-step:first-child { border-radius: var(--radius) var(--radius) 0 0; }
+    .pipe-step:last-child  { border-radius: 0 0 var(--radius) var(--radius); }
+    .pipe-num {
+      min-width: 28px; height: 28px;
+      background: var(--accent); color: #fff;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: .8rem; font-weight: 700; flex-shrink: 0; margin-top: .1rem;
+    }
+    .pipe-body h4 { font-size: .95rem; margin-bottom: .25rem; color: var(--text); }
+    .pipe-body p  { font-size: .88rem; margin: 0; }
+
+    /* ── FIGURE PANELS ── */
+    .fig-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem; margin-top: 1.5rem;
+    }
+    .fig-panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }
+    .fig-panel svg { display: block; width: 100%; height: auto; }
+    .fig-caption {
+      padding: .75rem 1rem; font-size: .83rem; color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── TABS ── */
+    .tab-bar {
+      display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 0;
+    }
+    .tab-btn {
+      background: none; border: none; cursor: pointer;
+      padding: .7rem 1.4rem; font-size: .9rem; font-weight: 500;
+      color: var(--text-muted); border-bottom: 2px solid transparent;
+      margin-bottom: -2px; transition: color .15s, border-color .15s;
+    }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: rgba(88,166,255,.07);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 1rem 1.25rem; margin: 1.25rem 0;
+    }
+    .callout.warning { border-color: var(--accent3); background: rgba(210,153,34,.07); }
+    .callout.success { border-color: var(--accent2); background: rgba(63,185,80,.07); }
+    .callout p { margin: 0; font-size: .92rem; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem; text-align: center;
+      color: var(--text-muted); font-size: .85rem;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+
+    @media (max-width: 640px) {
+      nav a:not(.brand) { display: none; }
+      .hero { padding: 3rem 1rem 2.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════ NAV ════════════════ -->
+<nav>
+  <a class="brand" href="#">templatepy</a>
+  <a href="#why">Motivation</a>
+  <a href="#algorithm">Algorithm</a>
+  <a href="#install">Installation</a>
+  <a href="#usage">Usage</a>
+  <a href="#output">Output</a>
+  <a href="#figures">Figures</a>
+  <a href="https://github.com/eartigau/templatepy" target="_blank">GitHub</a>
+</nav>
+
+<!-- ════════════════ HERO ════════════════ -->
+<header class="hero">
+  <h1>templatepy</h1>
+  <p>Interpolation-free stellar spectral template construction from multi-epoch échelle spectra — for NIRPS and SPIRou.</p>
+  <div class="badge-row">
+    <span class="badge badge-blue">🔭 NIRPS · SPIRou</span>
+    <span class="badge badge-green">🐍 Python ≥ 3.10</span>
+    <span class="badge badge-yellow">⚡ Numba JIT</span>
+    <span class="badge badge-blue">📐 No interpolation</span>
+  </div>
+  <a href="#install" class="btn-primary">Get started →</a>
+</header>
+
+<!-- ════════════════ WHY ════════════════ -->
+<section id="why">
+  <div class="container">
+    <h2><span class="anchor">#</span>Why no interpolation?</h2>
+    <p>Classical template pipelines resample every spectrum onto a common wavelength grid <em>before</em> co-adding. This introduces three well-known problems:</p>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">〰️</div>
+        <h3>Correlated noise</h3>
+        <p>Each spline resampling mixes adjacent pixels, creating wavelength-correlated noise that inflates apparent spectral features and biases line shape measurements.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🫧</div>
+        <h3>Line smearing</h3>
+        <p>A non-integer pixel shift smears sharp absorption lines over multiple output pixels, degrading the effective spectral resolution of the co-added template.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔀</div>
+        <h3>Order-edge mixing</h3>
+        <p>Near échelle order boundaries, flux from overlapping orders contaminates the resampled spectrum when a single common grid spans multiple physical orders.</p>
+      </div>
+    </div>
+
+    <p style="margin-top:1.5rem;"><strong>templatepy</strong> eliminates all three issues. Pixels are never resampled individually. Instead, the BERV-corrected (\(\lambda_\text{bary}\), flux) pairs from <em>every epoch</em> are fed directly into a Gaussian-weighted Savitzky–Golay regression that maps the irregular cloud onto the output grid in one step.</p>
+
+    <div class="callout">
+      <p><strong>Key insight:</strong> the large range of Barycentric Earth Radial Velocities (BERV) across a typical observing season — up to ±30 km s⁻¹ — means that a stellar absorption line visits many different detector pixel positions across epochs. Combining all epochs without resampling effectively super-samples the spectrum, recovering sub-pixel spectral information.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ ALGORITHM ════════════════ -->
+<section id="algorithm">
+  <div class="container">
+    <h2><span class="anchor">#</span>Algorithm</h2>
+
+    <h3>The "magic grid"</h3>
+    <p>The output wavelength axis is a logarithmic grid equally spaced in velocity:</p>
+
+    $$\lambda_k = \lambda_0 \exp\!\left(\frac{k}{N}\,\ln\frac{\lambda_1}{\lambda_0}\right), \quad k = 0,\dots,N-1$$
+
+    <p>with $\Delta v = c\,(\lambda_{k+1}/\lambda_k - 1)$ = 0.5 km s⁻¹ for NIRPS and 1.0 km s⁻¹ for SPIRou. Every pixel covers the same fractional bandwidth, so the pixel response function is shift-invariant.</p>
+
+    <h3>BERV correction</h3>
+    <p>Each observation's wavelength array is shifted to the Solar System barycentre using the full relativistic formula:</p>
+
+    $$\lambda_\text{bary} = \lambda_\text{obs} \sqrt{\frac{1 + v_\text{BERV}/c}{1 - v_\text{BERV}/c}}$$
+
+    <p>This aligns all spectra in a common rest frame before they are co-added.</p>
+
+    <h3>Gaussian–Savitzky–Golay reconstruction</h3>
+    <p>For each output pixel $\lambda_k$ the filter fits a polynomial of degree $p = 3$ to the surrounding scattered data points, weighted by a Gaussian in log-wavelength:</p>
+
+    $$w_i = \exp\!\left(-\frac{(\ln\lambda_i - \ln\lambda_k)^2}{2\sigma^2}\right)$$
+
+    <p>where $\sigma = \text{FWHM}/(2\sqrt{2\ln 2})$ with FWHM = $3\,\Delta v\,/\,c$. The polynomial coefficients give the template value <em>and</em> its derivatives $\partial f/\partial\ln\lambda$ up to third order at no extra cost.</p>
+
+    <h3>Pipeline steps</h3>
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="pipe-num">1</div>
+        <div class="pipe-body">
+          <h4>Read &amp; cache</h4>
+          <p>FITS files are read once; per-order (wave, flux, blaze, BERV) dicts are pickled to <code class="inline">&lt;input&gt;_temp/</code> for fast re-runs.</p>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-num">2</div>
+        <div class="pipe-body">
+          <h4>Telluric masking</h4>
+          <p>Pixels where O₂ transmittance &lt; 90 % (TAPAS model, La Silla) are flagged NaN. Optional sky emission masking controlled by <code class="inline">--skymask</code>.</p>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-num">3</div>
+        <div class="pipe-body">
+          <h4>BERV shift → barycentric frame</h4>
+          <p>Each pixel moves to its barycentric wavelength. No interpolation.</p>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-num">4</div>
+        <div class="pipe-body">
+          <h4>Gaussian–SavGol regression (×4 iterations)</h4>
+          <p>All scattered (log λ, f) pairs fed to the filter. Template and derivatives d0…d3 produced in the final iteration.</p>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-num">5</div>
+        <div class="pipe-body">
+          <h4>Sigma-clipping (2σ)</h4>
+          <p>Residuals between each observation and current template are computed. Pixels &gt; 2σ are rejected; template is refit.</p>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-num">6</div>
+        <div class="pipe-body">
+          <h4>Continuum correction</h4>
+          <p>A low-pass-filtered ratio removes slow continuum mismatches from imperfect blaze division.</p>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-num">7</div>
+        <div class="pipe-body">
+          <h4>Odd + even order combination</h4>
+          <p>Odd and even diffraction orders are built separately and merged with blaze-function weights. Order-edge fall-off handled by Gaussian-eroded weight profiles.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ FIGURES ════════════════ -->
+<section id="figures">
+  <div class="container">
+    <h2><span class="anchor">#</span>Illustrated figures</h2>
+    <p>The following inline diagrams illustrate the key concepts of the method. Actual output figures can be regenerated with the bundled <code class="inline">generate_figures.py</code> script.</p>
+
+    <div class="fig-grid">
+
+      <!-- Figure 1: BERV shifting -->
+      <div class="fig-panel">
+        <svg viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg" style="background:#0d1117">
+          <defs>
+            <linearGradient id="g1" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%"   stop-color="#1f6feb"/>
+              <stop offset="100%" stop-color="#3fb950"/>
+            </linearGradient>
+          </defs>
+          <!-- Axes -->
+          <line x1="40" y1="220" x2="380" y2="220" stroke="#30363d" stroke-width="1.5"/>
+          <line x1="40" y1="20"  x2="40"  y2="220" stroke="#30363d" stroke-width="1.5"/>
+          <text x="200" y="248" fill="#8b949e" font-size="11" text-anchor="middle" font-family="Inter,sans-serif">Wavelength (nm)</text>
+          <text x="14" y="120" fill="#8b949e" font-size="11" text-anchor="middle" font-family="Inter,sans-serif" transform="rotate(-90,14,120)">Normalized flux</text>
+          <!-- Individual spectra shifted by BERV -->
+          <g opacity="0.45">
+            <polyline fill="none" stroke="#58a6ff" stroke-width="1"
+              points="60,140 80,138 100,100 110,130 130,140 160,132 180,90 195,135 220,140 250,136 270,88 285,133 310,140 340,135 360,140"/>
+            <polyline fill="none" stroke="#388bfd" stroke-width="1"
+              points="66,140 86,138 106,100 116,130 136,140 166,132 186,90 201,135 226,140 256,136 276,88 291,133 316,140 346,135 366,140"/>
+            <polyline fill="none" stroke="#1f6feb" stroke-width="1"
+              points="54,140 74,138 94,100 104,130 124,140 154,132 174,90 189,135 214,140 244,136 264,88 279,133 304,140 334,135 354,140"/>
+            <polyline fill="none" stroke="#2ea043" stroke-width="1"
+              points="72,140 92,138 112,100 122,130 142,140 172,132 192,90 207,135 232,140 262,136 282,88 297,133 322,140 352,135 372,140"/>
+            <polyline fill="none" stroke="#3fb950" stroke-width="1"
+              points="48,140 68,138 88,100 98,130 118,140 148,132 168,90 183,135 208,140 238,136 258,88 273,133 298,140 328,135 348,140"/>
+          </g>
+          <!-- Template -->
+          <polyline fill="none" stroke="url(#g1)" stroke-width="2.5"
+            points="60,140 80,138 97,100 110,130 130,140 160,132 179,90 194,135 219,140 249,136 268,88 283,133 308,140 338,135 360,140"/>
+          <!-- Legend -->
+          <rect x="255" y="28" width="115" height="54" rx="4" fill="#161b22" stroke="#30363d"/>
+          <line x1="263" y1="43" x2="283" y2="43" stroke="#58a6ff" stroke-width="1" opacity="0.6"/>
+          <text x="288" y="47" fill="#8b949e" font-size="10" font-family="Inter,sans-serif">Individual epochs</text>
+          <line x1="263" y1="63" x2="283" y2="63" stroke="url(#g1)" stroke-width="2.5"/>
+          <text x="288" y="67" fill="#e6edf3" font-size="10" font-family="Inter,sans-serif">Template (co-added)</text>
+          <!-- BERV arrows -->
+          <text x="110" y="70" fill="#d29922" font-size="9" font-family="Inter,sans-serif">BERV shifts</text>
+          <line x1="98" y1="72" x2="66" y2="105" stroke="#d29922" stroke-width="1" stroke-dasharray="3,2"/>
+          <line x1="98" y1="72" x2="106" y2="105" stroke="#d29922" stroke-width="1" stroke-dasharray="3,2"/>
+        </svg>
+        <div class="fig-caption"><strong>Fig. 1 — BERV super-sampling.</strong> Five epochs of the same stellar absorption line at different BERV offsets (coloured). Each epoch's pixels land at slightly different wavelengths. Co-adding without resampling (template, white–green gradient) achieves sub-pixel sampling of the line profile.</div>
+      </div>
+
+      <!-- Figure 2: Gaussian-SavGol window -->
+      <div class="fig-panel">
+        <svg viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg" style="background:#0d1117">
+          <!-- Axes -->
+          <line x1="40" y1="215" x2="375" y2="215" stroke="#30363d" stroke-width="1.5"/>
+          <line x1="40" y1="20"  x2="40"  y2="215" stroke="#30363d" stroke-width="1.5"/>
+          <text x="205" y="243" fill="#8b949e" font-size="11" text-anchor="middle" font-family="Inter,sans-serif">log λ</text>
+          <text x="13" y="118" fill="#8b949e" font-size="11" text-anchor="middle" font-family="Inter,sans-serif" transform="rotate(-90,13,118)">Weight / Flux</text>
+          <!-- Gaussian window centred at output pixel -->
+          <polygon fill="rgba(88,166,255,0.12)" stroke="none"
+            points="40,215 80,213 120,200 160,158 200,55 240,158 280,200 320,213 360,215"/>
+          <polyline fill="none" stroke="#58a6ff" stroke-width="2"
+            points="40,215 80,213 120,200 160,158 200,55 240,158 280,200 320,213 360,215"/>
+          <!-- Scattered data points -->
+          <circle cx="68"  cy="178" r="3.5" fill="#3fb950"/>
+          <circle cx="85"  cy="192" r="3.5" fill="#3fb950"/>
+          <circle cx="118" cy="155" r="3.5" fill="#3fb950"/>
+          <circle cx="142" cy="140" r="3.5" fill="#3fb950"/>
+          <circle cx="165" cy="125" r="3.5" fill="#3fb950"/>
+          <circle cx="183" cy="108" r="3.5" fill="#3fb950" stroke="#d29922" stroke-width="2"/>
+          <circle cx="200" cy="115" r="3.5" fill="#3fb950"/>
+          <circle cx="218" cy="120" r="3.5" fill="#3fb950"/>
+          <circle cx="235" cy="132" r="3.5" fill="#3fb950"/>
+          <circle cx="258" cy="150" r="3.5" fill="#3fb950"/>
+          <circle cx="283" cy="168" r="3.5" fill="#3fb950"/>
+          <circle cx="312" cy="182" r="3.5" fill="#3fb950"/>
+          <circle cx="345" cy="192" r="3.5" fill="#3fb950"/>
+          <!-- Outlier (sigma-clipped) -->
+          <circle cx="183" cy="75" r="4" fill="none" stroke="#f85149" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <text x="192" y="78" fill="#f85149" font-size="9" font-family="Inter,sans-serif">&gt;2σ clipped</text>
+          <!-- Fitted polynomial -->
+          <path d="M 60,185 C 100,160 150,118 200,115 C 250,112 300,145 345,178" fill="none" stroke="#d29922" stroke-width="2.5"/>
+          <!-- Target pixel -->
+          <line x1="200" y1="55" x2="200" y2="215" stroke="#58a6ff" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/>
+          <circle cx="200" cy="115" r="5" fill="#58a6ff"/>
+          <text x="205" y="112" fill="#58a6ff" font-size="9" font-family="Inter,sans-serif">output pixel λ_k</text>
+          <!-- Legend -->
+          <rect x="248" y="22" width="122" height="70" rx="4" fill="#161b22" stroke="#30363d"/>
+          <line x1="256" y1="37" x2="272" y2="37" stroke="#58a6ff" stroke-width="2"/>
+          <text x="277" y="41" fill="#8b949e" font-size="10" font-family="Inter,sans-serif">Gaussian weight</text>
+          <circle cx="264" cy="55" r="3.5" fill="#3fb950"/>
+          <text x="272" y="59" fill="#8b949e" font-size="10" font-family="Inter,sans-serif">Data points</text>
+          <line x1="256" y1="73" x2="272" y2="73" stroke="#d29922" stroke-width="2.5"/>
+          <text x="277" y="77" fill="#8b949e" font-size="10" font-family="Inter,sans-serif">Fitted polynomial</text>
+        </svg>
+        <div class="fig-caption"><strong>Fig. 2 — Gaussian–Savitzky–Golay reconstruction.</strong> For each output pixel (blue dashed line), a degree-3 polynomial is fitted to surrounding scattered data points (green) weighted by a Gaussian envelope (blue area). Outliers more than 2σ from the fit (red dashed circle) are rejected. The polynomial value and its derivatives at λ<sub>k</sub> define the template and the d1…d3 columns.</div>
+      </div>
+
+      <!-- Figure 3: Iteration convergence -->
+      <div class="fig-panel">
+        <svg viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg" style="background:#0d1117">
+          <!-- Axes -->
+          <line x1="40" y1="215" x2="375" y2="215" stroke="#30363d" stroke-width="1.5"/>
+          <line x1="40" y1="20"  x2="40"  y2="215" stroke="#30363d" stroke-width="1.5"/>
+          <text x="205" y="243" fill="#8b949e" font-size="11" text-anchor="middle" font-family="Inter,sans-serif">Wavelength (nm)</text>
+          <text x="13" y="118" fill="#8b949e" font-size="11" text-anchor="middle" font-family="Inter,sans-serif" transform="rotate(-90,13,118)">Flux (norm.)</text>
+          <!-- Grid lines -->
+          <line x1="40" y1="155" x2="375" y2="155" stroke="#21262d" stroke-width="1" stroke-dasharray="4,3"/>
+          <line x1="40" y1="95"  x2="375" y2="95"  stroke="#21262d" stroke-width="1" stroke-dasharray="4,3"/>
+          <!-- Iter 0 (rough) -->
+          <path d="M50,155 C70,152 90,130 120,108 C140,92 160,89 180,91 C200,93 220,89 240,95 C260,101 280,115 310,130 C330,140 355,152 370,155"
+                fill="none" stroke="#30363d" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <!-- Iter 1 -->
+          <path d="M50,155 C70,153 90,132 120,108 C140,92 160,88 180,90 C200,92 220,88 240,94 C260,100 280,114 310,130 C330,141 355,153 370,155"
+                fill="none" stroke="#388bfd" stroke-width="1.5" opacity="0.6"/>
+          <!-- Iter 2 -->
+          <path d="M50,155 C70,153 90,131 120,107 C140,91 160,87 180,89 C200,91 220,87 240,93 C260,99 280,113 310,129 C330,140 355,153 370,155"
+                fill="none" stroke="#1f6feb" stroke-width="1.8" opacity="0.8"/>
+          <!-- Iter 3 (final) -->
+          <path d="M50,155 C70,153 90,131 120,107 C140,91 160,87 180,89 C200,91 220,87 240,93 C260,99 280,113 310,129 C330,140 355,153 370,155"
+                fill="none" stroke="#58a6ff" stroke-width="2.5"/>
+          <!-- Outlier points removed in later iters -->
+          <circle cx="155" cy="65" r="4" fill="none" stroke="#f85149" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <circle cx="235" cy="65" r="4" fill="none" stroke="#f85149" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <text x="190" y="58" fill="#f85149" font-size="9" text-anchor="middle" font-family="Inter,sans-serif">cosmic rays removed</text>
+          <!-- Legend -->
+          <rect x="240" y="25" width="130" height="85" rx="4" fill="#161b22" stroke="#30363d"/>
+          <line x1="248" y1="40" x2="265" y2="40" stroke="#30363d" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <text x="270" y="44" fill="#8b949e" font-size="10" font-family="Inter,sans-serif">Iteration 0</text>
+          <line x1="248" y1="57" x2="265" y2="57" stroke="#388bfd" stroke-width="1.5" opacity="0.6"/>
+          <text x="270" y="61" fill="#8b949e" font-size="10" font-family="Inter,sans-serif">Iteration 1</text>
+          <line x1="248" y1="74" x2="265" y2="74" stroke="#1f6feb" stroke-width="1.8" opacity="0.8"/>
+          <text x="270" y="78" fill="#8b949e" font-size="10" font-family="Inter,sans-serif">Iteration 2</text>
+          <line x1="248" y1="91" x2="265" y2="91" stroke="#58a6ff" stroke-width="2.5"/>
+          <text x="270" y="95" fill="#e6edf3" font-size="10" font-family="Inter,sans-serif">Final (iter 3)</text>
+        </svg>
+        <div class="fig-caption"><strong>Fig. 3 — Iterative sigma-clipping.</strong> Four iterations progressively reject outliers (cosmic rays, bad pixels, telluric residuals). The template converges and outlier-contaminated epochs (red circles) are excluded from the final fit.</div>
+      </div>
+
+      <!-- Figure 4: Odd/even combination -->
+      <div class="fig-panel">
+        <svg viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg" style="background:#0d1117">
+          <!-- Axes -->
+          <line x1="40" y1="215" x2="375" y2="215" stroke="#30363d" stroke-width="1.5"/>
+          <line x1="40" y1="20"  x2="40"  y2="215" stroke="#30363d" stroke-width="1.5"/>
+          <text x="205" y="243" fill="#8b949e" font-size="11" text-anchor="middle" font-family="Inter,sans-serif">Wavelength (nm)</text>
+          <text x="13" y="118" fill="#8b949e" font-size="11" text-anchor="middle" font-family="Inter,sans-serif" transform="rotate(-90,13,118)">Flux</text>
+          <!-- Odd order blaze envelope -->
+          <path d="M50,215 C80,215 100,195 130,150 C160,105 185,90 200,90 C215,90 240,105 265,150 C285,185 310,210 340,215 L 375,215"
+                fill="rgba(88,166,255,0.07)" stroke="none"/>
+          <path d="M50,215 C80,215 100,195 130,150 C160,105 185,90 200,90 C215,90 240,105 265,150 C285,185 310,210 340,215"
+                fill="none" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <!-- Even order blaze (offset) -->
+          <path d="M100,215 C130,215 150,205 175,165 C200,125 220,105 240,105 C260,105 280,125 305,165 C325,195 345,210 370,215"
+                fill="rgba(63,185,80,0.07)" stroke="none"/>
+          <path d="M100,215 C130,215 150,205 175,165 C200,125 220,105 240,105 C260,105 280,125 305,165 C325,195 345,210 370,215"
+                fill="none" stroke="#3fb950" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <!-- Odd order spectrum -->
+          <path d="M50,215 C80,215 100,185 130,135 C155,95 175,78 200,80 C225,82 250,96 270,138 C290,175 315,207 340,215 L375,215"
+                fill="none" stroke="#58a6ff" stroke-width="2"/>
+          <!-- Even order spectrum -->
+          <path d="M100,215 C130,215 150,195 175,158 C195,130 215,115 240,115 C265,115 280,130 305,158 C320,178 345,207 370,215"
+                fill="none" stroke="#3fb950" stroke-width="2"/>
+          <!-- Combined template -->
+          <path d="M50,215 C80,215 95,182 120,140 C150,95 175,77 200,79 C225,81 250,95 270,136 C290,172 310,198 330,212 C348,215 362,215 375,215"
+                fill="none" stroke="#d29922" stroke-width="3"/>
+          <!-- Overlap zone shading -->
+          <rect x="100" y="20" width="240" height="195" fill="rgba(63,185,80,0.03)" stroke="rgba(63,185,80,0.2)" stroke-dasharray="3,3" stroke-width="1"/>
+          <text x="220" y="35" fill="#3fb950" font-size="9" text-anchor="middle" font-family="Inter,sans-serif" opacity="0.7">overlap region</text>
+          <!-- Legend -->
+          <rect x="43" y="25" width="130" height="70" rx="4" fill="#161b22" stroke="#30363d"/>
+          <line x1="51" y1="40" x2="68" y2="40" stroke="#58a6ff" stroke-width="2"/>
+          <text x="73" y="44" fill="#8b949e" font-size="10" font-family="Inter,sans-serif">Odd orders</text>
+          <line x1="51" y1="57" x2="68" y2="57" stroke="#3fb950" stroke-width="2"/>
+          <text x="73" y="61" fill="#8b949e" font-size="10" font-family="Inter,sans-serif">Even orders</text>
+          <line x1="51" y1="74" x2="68" y2="74" stroke="#d29922" stroke-width="3"/>
+          <text x="73" y="78" fill="#e6edf3" font-size="10" font-family="Inter,sans-serif">Combined (blaze-wt.)</text>
+        </svg>
+        <div class="fig-caption"><strong>Fig. 4 — Odd + even order combination.</strong> Odd (blue) and even (green) diffraction orders are built independently and merged using blaze-function weights. In the order overlap region both contribute; at order edges the weight gracefully tapers to zero via a Gaussian-eroded profile. The yellow line is the final combined template.</div>
+      </div>
+
+      <!-- Figure 5: Spectral derivatives -->
+      <div class="fig-panel">
+        <svg viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg" style="background:#0d1117">
+          <!-- Axes -->
+          <line x1="40" y1="215" x2="375" y2="215" stroke="#30363d" stroke-width="1.5"/>
+          <line x1="40" y1="20"  x2="40"  y2="215" stroke="#30363d" stroke-width="1.5"/>
+          <line x1="40" y1="120" x2="375" y2="120" stroke="#30363d" stroke-width="1" stroke-dasharray="2,2" opacity="0.4"/>
+          <text x="205" y="243" fill="#8b949e" font-size="11" text-anchor="middle" font-family="Inter,sans-serif">log λ</text>
+          <!-- d0: template -->
+          <path d="M50,155 C80,155 105,140 130,115 C155,90 175,78 200,78 C225,78 245,90 270,115 C295,140 320,152 360,155"
+                fill="none" stroke="#58a6ff" stroke-width="2.5"/>
+          <!-- d1: first derivative -->
+          <path d="M50,120 C80,122 105,117 130,110 C155,100 175,105 200,120 C225,135 245,130 270,123 C295,116 320,118 360,120"
+                fill="none" stroke="#3fb950" stroke-width="2"/>
+          <!-- d2: second derivative -->
+          <path d="M50,120 C80,118 105,110 130,108 C155,118 170,125 200,120 C230,115 245,108 270,108 C295,115 320,119 360,120"
+                fill="none" stroke="#d29922" stroke-width="1.5"/>
+          <!-- zero line -->
+          <!-- Legend -->
+          <rect x="248" y="25" width="122" height="72" rx="4" fill="#161b22" stroke="#30363d"/>
+          <line x1="256" y1="40" x2="272" y2="40" stroke="#58a6ff" stroke-width="2.5"/>
+          <text x="277" y="44" fill="#e6edf3" font-size="10" font-family="Inter,sans-serif">d0 — template</text>
+          <line x1="256" y1="57" x2="272" y2="57" stroke="#3fb950" stroke-width="2"/>
+          <text x="277" y="61" fill="#8b949e" font-size="10" font-family="Inter,sans-serif">d1 — ∂f/∂ ln λ</text>
+          <line x1="256" y1="74" x2="272" y2="74" stroke="#d29922" stroke-width="1.5"/>
+          <text x="277" y="78" fill="#8b949e" font-size="10" font-family="Inter,sans-serif">d2 — ∂²f/∂ ln²λ</text>
+          <!-- Application label -->
+          <text x="80" y="40" fill="#8b949e" font-size="10" font-family="Inter,sans-serif">line shape</text>
+          <text x="80" y="52" fill="#8b949e" font-size="10" font-family="Inter,sans-serif">diagnostics →</text>
+          <line x1="120" y1="46" x2="148" y2="78" stroke="#8b949e" stroke-width="1" stroke-dasharray="3,2"/>
+        </svg>
+        <div class="fig-caption"><strong>Fig. 5 — Spectral derivatives.</strong> The Gaussian–SavGol fit yields the template flux (d0, blue) and its first (d1, green) and second (d2, yellow) derivatives in log-wavelength at no additional cost. These can be used to linearise RV shifts, measure line asymmetries, or as basis vectors for line-profile variation analysis.</div>
+      </div>
+
+      <!-- Figure 6: O2 mask -->
+      <div class="fig-panel">
+        <svg viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg" style="background:#0d1117">
+          <!-- Axes -->
+          <line x1="40" y1="215" x2="375" y2="215" stroke="#30363d" stroke-width="1.5"/>
+          <line x1="40" y1="20"  x2="40"  y2="215" stroke="#30363d" stroke-width="1.5"/>
+          <text x="205" y="243" fill="#8b949e" font-size="11" text-anchor="middle" font-family="Inter,sans-serif">Wavelength (nm)</text>
+          <!-- O2 mask bands -->
+          <rect x="130" y="20" width="35" height="195" fill="rgba(248,81,73,0.12)" stroke="rgba(248,81,73,0.3)" stroke-width="1"/>
+          <rect x="255" y="20" width="50" height="195" fill="rgba(248,81,73,0.12)" stroke="rgba(248,81,73,0.3)" stroke-width="1"/>
+          <text x="147" y="38" fill="#f85149" font-size="9" text-anchor="middle" font-family="Inter,sans-serif">O₂ A</text>
+          <text x="280" y="38" fill="#f85149" font-size="9" text-anchor="middle" font-family="Inter,sans-serif">O₂ B</text>
+          <!-- TAPAS O2 transmittance -->
+          <path d="M50,55 L 125,55 L 130,55 L 132,80 L 135,165 L 138,215 L 140,215 L 143,215 L 145,180 L 148,100 L 150,60 L 155,55 L 165,55 L 250,55 L 255,55 L 258,80 L 262,160 L 265,215 L 268,215 L 272,215 L 275,180 L 280,120 L 285,75 L 290,58 L 295,55 L 305,55 L 370,55"
+                fill="none" stroke="#3fb950" stroke-width="2"/>
+          <!-- Stellar spectrum (masked in O2 bands) -->
+          <path d="M50,125 C 60,122 80,115 95,108 C 110,102 120,100 125,100 L130,100"
+                fill="none" stroke="#58a6ff" stroke-width="2"/>
+          <path d="M165,100 C170,100 190,95 210,93 C 230,91 245,92 250,93 L 255,93"
+                fill="none" stroke="#58a6ff" stroke-width="2"/>
+          <path d="M305,93 C 315,92 330,91 345,92 C 358,93 367,95 370,97"
+                fill="none" stroke="#58a6ff" stroke-width="2"/>
+          <!-- NaN segments in mask -->
+          <line x1="130" y1="100" x2="165" y2="100" stroke="#f85149" stroke-width="2" stroke-dasharray="3,2"/>
+          <line x1="255" y1="93"  x2="305" y2="93"  stroke="#f85149" stroke-width="2" stroke-dasharray="3,2"/>
+          <!-- Legend -->
+          <rect x="43" y="145" width="130" height="60" rx="4" fill="#161b22" stroke="#30363d"/>
+          <line x1="51" y1="160" x2="68" y2="160" stroke="#3fb950" stroke-width="2"/>
+          <text x="73" y="164" fill="#8b949e" font-size="10" font-family="Inter,sans-serif">TAPAS O₂ (τ)</text>
+          <line x1="51" y1="177" x2="68" y2="177" stroke="#58a6ff" stroke-width="2"/>
+          <text x="73" y="181" fill="#8b949e" font-size="10" font-family="Inter,sans-serif">Stellar spectrum</text>
+          <line x1="51" y1="194" x2="68" y2="194" stroke="#f85149" stroke-width="2" stroke-dasharray="3,2"/>
+          <text x="73" y="198" fill="#8b949e" font-size="10" font-family="Inter,sans-serif">Masked (NaN)</text>
+          <!-- 90% line -->
+          <line x1="40" y1="75" x2="375" y2="75" stroke="#d29922" stroke-width="1" stroke-dasharray="3,2"/>
+          <text x="378" y="78" fill="#d29922" font-size="9" font-family="Inter,sans-serif">90%</text>
+        </svg>
+        <div class="fig-caption"><strong>Fig. 6 — O₂ telluric masking.</strong> Pixels where the TAPAS O₂ transmittance (green) falls below 90 % (yellow dashed line) are set to NaN (red dashes) before template construction. This prevents telluric contamination from biasing the stellar template in the A and B atmospheric oxygen bands.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ INSTALL ════════════════ -->
+<section id="install">
+  <div class="container">
+    <h2><span class="anchor">#</span>Installation</h2>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="showTab('tab-conda', this)">conda (recommended)</button>
+      <button class="tab-btn" onclick="showTab('tab-pip', this)">pip only</button>
+      <button class="tab-btn" onclick="showTab('tab-dev', this)">Development</button>
+    </div>
+
+    <div id="tab-conda" class="tab-panel active">
+      <pre><code class="language-bash"># 1. Clone the repository
+git clone https://github.com/eartigau/templatepy.git
+cd templatepy
+
+# 2. Create a dedicated conda environment
+conda create -n templatepy python=3.12
+conda activate templatepy
+
+# 3. Install all dependencies
+pip install -r requirements.txt
+
+# 4. Install etienne_tools (required dependency)
+pip install git+https://github.com/eartigau/etienne_tools.git
+
+# 5. Verify
+python -c "from template_nointerp import make_template; print('OK')"</code></pre>
+    </div>
+
+    <div id="tab-pip" class="tab-panel">
+      <pre><code class="language-bash">git clone https://github.com/eartigau/templatepy.git
+cd templatepy
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+pip install git+https://github.com/eartigau/etienne_tools.git</code></pre>
+    </div>
+
+    <div id="tab-dev" class="tab-panel">
+      <pre><code class="language-bash">git clone https://github.com/eartigau/templatepy.git
+cd templatepy
+conda create -n templatepy-dev python=3.12
+conda activate templatepy-dev
+pip install -e ".[dev]"
+pip install git+https://github.com/eartigau/etienne_tools.git</code></pre>
+    </div>
+
+    <div class="callout warning" style="margin-top:1.5rem;">
+      <p><strong>Numba first-run compilation:</strong> On the very first run, Numba will JIT-compile the inner loops. This adds ~30–60 s of one-time overhead. Subsequent runs use the cached bytecode and start immediately.</p>
+    </div>
+
+    <h3>Dependencies at a glance</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Package</th><th>Min. version</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>numpy</code></td><td>1.24</td><td>Array operations throughout</td></tr>
+          <tr><td><code>scipy</code></td><td>1.10</td><td>Splines, constants, signal processing</td></tr>
+          <tr><td><code>astropy</code></td><td>5.3</td><td>FITS I/O, Table</td></tr>
+          <tr><td><code>matplotlib</code></td><td>3.7</td><td>Diagnostic plots</td></tr>
+          <tr><td><code>tqdm</code></td><td>4.65</td><td>Progress bars</td></tr>
+          <tr><td><code>numba</code></td><td>0.57</td><td>JIT-compiled inner loops</td></tr>
+          <tr><td><code>etienne_tools</code></td><td>latest</td><td><code>lowpassfilter</code> utility</td></tr>
+          <tr><td><code>gaussian_savgol</code></td><td>bundled</td><td>Gaussian-weighted SavGol on irregular grid</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ USAGE ════════════════ -->
+<section id="usage">
+  <div class="container">
+    <h2><span class="anchor">#</span>Usage</h2>
+
+    <h3>Python API</h3>
+    <pre><code class="language-python">import glob
+from template_nointerp import make_template
+from astropy.table import Table
+
+# Collect all telluric-corrected FITS files
+files = sorted(glob.glob("data/*t.fits"))
+
+# Build the template  (instrument auto-detected from FITS header)
+tbl = make_template(
+    files,
+    doplot   = True,    # show diagnostic plot for a representative order
+    skymask  = 0.3,     # mask pixels where sky/flux > 0.3  (-1 = off)
+    mask_o2  = True,    # mask O2 bands using bundled TAPAS model
+)
+
+# Save as CSV and FITS
+tbl.write("my_template.csv",  overwrite=True)
+tbl.write("my_template.fits", overwrite=True)</code></pre>
+
+    <h3>Command-line interface</h3>
+    <pre><code class="language-bash">python template_nointerp.py &lt;input_folder&gt; &lt;output_file&gt; [options]
+
+# Examples:
+# Minimal run (NIRPS, no masking)
+python template_nointerp.py data/ TOI4552.csv
+
+# With O2 masking (recommended for NIR)
+python template_nointerp.py data/ TOI4552.csv --mask_o2
+
+# Sky masking + O2 masking
+python template_nointerp.py data/ TOI4552.csv --mask_o2 --skymask 0.3
+
+# Show diagnostic plots (processes one representative order only)
+python template_nointerp.py data/ TOI4552.csv --mask_o2 --doplot</code></pre>
+
+    <h3>Options reference</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>input_folder</code></td><td>positional</td><td>—</td><td>Folder with <code>*t.fits</code> input files</td></tr>
+          <tr><td><code>output_file</code></td><td>positional</td><td>—</td><td>Output path (.csv or .fits)</td></tr>
+          <tr><td><code>--skymask</code></td><td>float</td><td>−1</td><td>sky/continuum ratio threshold; −1 disables</td></tr>
+          <tr><td><code>--mask_o2</code></td><td>flag</td><td>off</td><td>Mask O₂ telluric bands with TAPAS model</td></tr>
+          <tr><td><code>--doplot</code></td><td>flag</td><td>off</td><td>Show intermediate diagnostic plots</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Re-using cached data</h3>
+    <p>On the first run, per-order data for each FITS file is pickled into <code class="inline">&lt;input_folder&gt;_temp/</code>. Subsequent runs with the same input folder skip re-reading the FITS files entirely, reducing run time by 3–5×. Delete the <code class="inline">_temp/</code> folder to force a fresh read.</p>
+  </div>
+</section>
+
+<!-- ════════════════ OUTPUT ════════════════ -->
+<section id="output">
+  <div class="container">
+    <h2><span class="anchor">#</span>Output format</h2>
+    <p>The output table (CSV or FITS) has one row per wavelength pixel on the barycentric magic grid.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Column</th><th>Units</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>wavelength</code></td><td>nm</td><td>Barycentric log-spaced wavelength grid</td></tr>
+          <tr><td><code>flux</code></td><td>ADU (norm.)</td><td>Blaze-weighted co-add of odd + even orders</td></tr>
+          <tr><td><code>eflux</code></td><td>ADU (norm.)</td><td>Propagated flux uncertainty</td></tr>
+          <tr><td><code>rms</code></td><td>ADU (norm.)</td><td>Per-pixel RMS across epochs</td></tr>
+          <tr><td><code>flux_odd</code></td><td>ADU (norm.)</td><td>Flux from odd diffraction orders only</td></tr>
+          <tr><td><code>flux_even</code></td><td>ADU (norm.)</td><td>Flux from even diffraction orders only</td></tr>
+          <tr><td><code>blaze_odd</code></td><td>—</td><td>Median blaze weight (odd orders)</td></tr>
+          <tr><td><code>blaze_even</code></td><td>—</td><td>Median blaze weight (even orders)</td></tr>
+          <tr><td><code>flux_savgol_d0</code></td><td>ADU (norm.)</td><td>Gaussian–SavGol template (= flux)</td></tr>
+          <tr><td><code>flux_savgol_d1</code></td><td>—</td><td>$\partial f / \partial \ln\lambda$</td></tr>
+          <tr><td><code>flux_savgol_d2</code></td><td>—</td><td>$\partial^2 f / \partial \ln^2\lambda$</td></tr>
+          <tr><td><code>flux_savgol_d3</code></td><td>—</td><td>$\partial^3 f / \partial \ln^3\lambda$</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>All <code class="inline">flux_savgol_d*</code> columns have <code class="inline">odd</code> and <code class="inline">even</code> variants (e.g., <code class="inline">flux_odd_savgol_d1</code>).</p>
+
+    <h3>Reading the output in Python</h3>
+    <pre><code class="language-python">from astropy.table import Table
+import matplotlib.pyplot as plt
+
+tbl = Table.read("my_template.csv")
+
+fig, axes = plt.subplots(3, 1, figsize=(14, 8), sharex=True)
+
+# Normalised template + uncertainty
+axes[0].fill_between(tbl["wavelength"],
+                     tbl["flux"] - tbl["eflux"],
+                     tbl["flux"] + tbl["eflux"],
+                     alpha=0.3, label="1-σ uncertainty")
+axes[0].plot(tbl["wavelength"], tbl["flux"], lw=0.8, label="Template")
+axes[0].set_ylabel("Flux (norm.)")
+
+# Odd vs even order comparison
+axes[1].plot(tbl["wavelength"], tbl["flux_odd"],  lw=0.7, label="Odd orders",  alpha=0.7)
+axes[1].plot(tbl["wavelength"], tbl["flux_even"], lw=0.7, label="Even orders", alpha=0.7)
+axes[1].set_ylabel("Flux (norm.)")
+
+# First derivative  (proxy for RV sensitivity)
+axes[2].plot(tbl["wavelength"], tbl["flux_savgol_d1"], lw=0.8, color="tab:orange")
+axes[2].set_ylabel("∂f/∂lnλ")
+axes[2].set_xlabel("Wavelength (nm)")
+
+for ax in axes:
+    ax.legend(fontsize=8)
+plt.tight_layout()
+plt.show()</code></pre>
+  </div>
+</section>
+
+<!-- ════════════════ INSTRUMENTS ════════════════ -->
+<section id="instruments">
+  <div class="container">
+    <h2><span class="anchor">#</span>Supported instruments</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Instrument</th><th>Observatory</th><th>Wavelength range</th><th>dv_grid</th><th>Fiber</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>NIRPS</strong></td>
+            <td>La Silla (ESO 3.6 m)</td>
+            <td>950 – 2000 nm</td>
+            <td>0.5 km s⁻¹</td>
+            <td>A</td>
+          </tr>
+          <tr>
+            <td><strong>SPIRou</strong></td>
+            <td>CFHT (Mauna Kea)</td>
+            <td>965 – 2500 nm</td>
+            <td>1.0 km s⁻¹</td>
+            <td>AB</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The instrument is detected automatically from the <code class="inline">INSTRUME</code> FITS header keyword. The TAPAS O₂ model bundled in <code class="inline">LaSilla_NIRPS_tapas.fits</code> is computed for the La Silla site; SPIRou users at Mauna Kea may wish to supply a site-appropriate model.</p>
+  </div>
+</section>
+
+<!-- ════════════════ FOOTER ════════════════ -->
+<footer>
+  <p>
+    <strong>templatepy</strong> — MIT License — © Étienne Artigau &nbsp;|&nbsp;
+    <a href="https://github.com/eartigau/templatepy" target="_blank">GitHub</a>
+  </p>
+  <p style="margin-top:.5rem; font-size:.8rem;">
+    Built for NIRPS and SPIRou spectroscopy. Pull requests welcome.
+  </p>
+</footer>
+
+<script>
+  // ── Syntax highlighting ──
+  document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());
+
+  // ── Tab switcher ──
+  function showTab(id, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    btn.classList.add('active');
+  }
+</script>
+</body>
+</html>
