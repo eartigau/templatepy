@@ -2,3 +2,5 @@
 *.csv
 *.pkl
 *_temp/
+TOI*/
+data*/
